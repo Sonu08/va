@@ -4,50 +4,116 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Assistant</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(to right, #8e2de2, #4a00e0);
-            color: white;
-            text-align: center;
             font-family: Arial, sans-serif;
-            padding-top: 50px;
+            text-align: center;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
         }
         .container {
-            max-width: 500px;
-            padding: 30px;
-            background: rgba(255, 255, 255, 0.1);
+            background: white;
+            padding: 20px;
             border-radius: 10px;
-            box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
-        }
-        input {
-            width: 80%;
-            padding: 10px;
-            border-radius: 5px;
-            border: none;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 60%;
+            margin: auto;
         }
         button {
             padding: 10px 20px;
-            margin-top: 10px;
+            margin: 10px;
+            font-size: 16px;
             border: none;
-            border-radius: 5px;
-            background: #ff9800;
+            background: #007BFF;
             color: white;
+            border-radius: 5px;
             cursor: pointer;
         }
         button:hover {
-            background: #e65100;
+            background: #0056b3;
+        }
+        #output {
+            margin-top: 20px;
+            font-size: 18px;
         }
     </style>
 </head>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
 <body>
+
+    <h1>🔹 AI Assistant 🔹</h1>
     <div class="container">
-        <h1>🤖 AI Assistant</h1>
-        <p>Ask me anything!</p>
-        <form action="/command" method="post">
-            <input type="text" name="command" placeholder="Type a command...">
-            <button type="submit">Submit</button>
-        </form>
+        <input type="text" id="query" placeholder="Ask me something..." style="padding: 10px; width: 80%; font-size: 16px;">
+        <button onclick="searchWikipedia()">🔍 Wikipedia</button>
+        <button onclick="openGoogle()">🌍 Open Google</button>
+        <button onclick="getTime()">⏰ Get Time</button>
+        <p id="output"></p>
     </div>
+
+    <script>
+        async function searchWikipedia() {
+            let query = document.getElementById('query').value;
+            let response = await fetch('/search_wikipedia', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: query })
+            });
+            let data = await response.json();
+            document.getElementById('output').innerText = data.response;
+        }
+
+        async function openGoogle() {
+            await fetch('/open_website', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: 'https://www.google.com' })
+            });
+            document.getElementById('output').innerText = "Opening Google...";
+        }
+
+        async function getTime() {
+            let response = await fetch('/tell_time');
+            let data = await response.json();
+            document.getElementById('output').innerText = data.response;
+        }
+    </script>
+
+<input type="text" id="city" placeholder="Enter city">
+<button onclick="getWeather()">Check Weather</button>
+<p id="weather_output"></p>
+
+<script>
+    async function getWeather() {
+        let city = document.getElementById('city').value.trim();
+        if (!city) {
+            document.getElementById('weather_output').innerText = "Enter a city name.";
+            return;
+        }
+
+        let response = await fetch('/weather', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ city: city })
+        });
+
+        let data = await response.json();
+        document.getElementById('weather_output').innerText = data.response;
+    }
+</script>
+
+<button onclick="startSpeech()">Speak</button>
+<p id="speech_output"></p>
+
+<script>
+    async function startSpeech() {
+        let response = await fetch('/listen', { method: 'GET' });
+        let data = await response.json();
+        document.getElementById('speech_output').innerText = "You said: " + data.response;
+    }
+</script>
+
 </body>
 </html>
