@@ -52,12 +52,24 @@ def speak():
     return jsonify({"response": "Speaking..."})
 
 @app.route('/listen', methods=['GET'])
+
 def listen():
     recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        print("Listening...")
-        recognizer.adjust_for_ambient_noise(source)
-        audio = recognizer.listen(source)
+    try:
+        with sr.Microphone() as source:
+            print("Listening...")
+            recognizer.adjust_for_ambient_noise(source)
+            audio = recognizer.listen(source)
+            command = recognizer.recognize_google(audio, language="en-US")
+            print(f"User said: {command}")
+            return command.lower()
+    except OSError:
+        print("Microphone not detected. Running in non-voice mode.")
+        return input("Type your command: ").lower()
+    except sr.UnknownValueError:
+        return "Sorry, I didn't catch that."
+    except sr.RequestError:
+        return "Error connecting to speech recognition service."
 
     try:
         command = recognizer.recognize_google(audio, language="en-US")
@@ -70,14 +82,25 @@ def index():
     return render_template('index.html')
 
 @app.route('/search_wikipedia', methods=['POST'])
-def search_wikipedia():
-    data = request.get_json()
-    query = data.get('query')
+def search_wikipedia(query):
     try:
+        speak("Searching Wikipedia...")
+        query = query.replace("wikipedia", "").strip()
+        if not query:
+            speak("Please provide a search term for Wikipedia.")
+            return
         results = wikipedia.summary(query, sentences=2)
-        return jsonify({"response": results})
+        speak("According to Wikipedia")
+        print(results)
+        speak(results)
+    except wikipedia.exceptions.DisambiguationError as e:
+        speak("There are multiple results. Please be more specific.")
+    except wikipedia.exceptions.PageError:
+        speak("No matching Wikipedia page found.")
     except Exception as e:
-        return jsonify({"response": f"Error: {e}"})
+        speak("An error occurred while searching Wikipedia.")
+        print(e)
+
 
 @app.route('/open_website', methods=['POST'])
 def open_website():
@@ -114,4 +137,5 @@ def get_weather():
         return jsonify({"response": "Couldn't fetch weather data. Try another city."})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
+
